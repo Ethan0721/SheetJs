@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="xlsx.full.min.js"></script>
+<script
+  src="https://code.jquery.com/jquery-2.1.4.js"
+  integrity="sha256-siFczlgw4jULnUICcdm9gjQPZkw/YPDqhQ9+nAOScE4="
+  crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.js" ></script>
+
+</head>
+<style>
+	button {background-color: powderblue;}
+</style>
+<body>
+<br/>
+
+<h1 id="file-name"> </h1>
+<div id="htmlout"></div>
+<input type="file" name="xlfile" id="xlf" accept=".xlsx"/> 
+<button id="button-a">Create Excel</button>
+<button id="add-sheet" onclick="add_sheet();">Add Sheet</button>
+<script>
+var url = "";
+var sheet_name = "";
+var workbook = XLSX.utils.book_new();;
+var sf = document.getElementById('file-name');
+var sa = document.getElementById('add-sheet');
+sf.innerHTML = "No file be Selected";
+
+document.getElementById('xlf').onchange = function () {
+	sf.innerHTML = "";
+	sa.innerHTML = "Add Sheet on "
+	url = this.value.replace(/.*[\/\\]/, '');
+	sf.innerHTML = "File name is " + url;
+	sa.innerHTML = sa.innerHTML + url;
+	workbook = wb_initialize(url);
+};
+
+function add_sheet(){
+	sheet_name = "Test Sheet1";
+	workbook.Props = { 
+		Title: "temp1",
+		Subject: "temp2",
+		Author: "Ethan",
+	};
+	workbook.SheetNames.push(sheet_name);
+	var ws_data = [["Hello World", "XIXI", "Desk"], ["Hi Ethan", "BIUBIU", "QIXA"]];
+	var ws = XLSX.utils.aoa_to_sheet(ws_data);
+	workbook.Sheets[sheet_name] = ws;
+
+	sheet_name = "Test 2"
+	workbook.Props = {
+		Title:"heihei",
+		Subject:"haha1",
+	};
+	workbook.SheetNames.push(sheet_name);
+	ws_data = [["Hello World"], ["Hi", "AAA", "CCC"]]
+	ws = XLSX.utils.aoa_to_sheet(ws_data);
+	workbook.Sheets[sheet_name] = ws;
+
+	sheet_name = "Test 3"
+	workbook.Props = {
+		Title:"h6789",
+		Subject:"haha1",
+		Author:"Ethan2"
+	};
+	workbook.SheetNames.push(sheet_name);
+	ws_data = [["Hello98765"], ["Hi", "AAA"], ["fghjkl"]]
+	ws = XLSX.utils.aoa_to_sheet(ws_data);
+	workbook.Sheets[sheet_name] = ws;
+	wb_parse();
+}
+
+function process_wb_html() {
+  htmlout.innerHTML = "";
+  for (var i = 0; i < workbook.SheetNames.length; i++) {
+  	var str =  workbook.Sheets[workbook.SheetNames[i]];
+  	htmlout.innerHTML += "Sheet Index "+ (i+1) + ": Name is " + workbook.SheetNames[i] + XLSX.utils.sheet_to_html(str) + "<br/>";
+  }
+}
+
+function process_wb_json(){
+	console.clear();
+	var sheet_length = workbook.SheetNames.length;
+	for (var i = 0; i < sheet_length; i++) {
+		var sheet_name = workbook.SheetNames[i];
+		console.log("Sheet Index " + (i+1) + ": Name is " + workbook.SheetNames[i] );
+		var worksheet = workbook.Sheets[sheet_name];
+		console.log(XLSX.utils.sheet_to_json(worksheet, {header:1}));
+	}
+}
+
+function saveFile(){
+ 	var wbout = XLSX.write(workbook, {bookType:'xlsx', type:'binary'});	
+	function s2ab(s){
+		var buf = new ArrayBuffer(s.length);
+		var view = new Uint8Array(buf);
+		for (var i = 0; i < s.length; i++) {
+			view[i] = s.charCodeAt(i) & 0xFF;
+		}
+		return buf;
+	}
+	$('#button-a').click(function(){
+		saveAs(new Blob([s2ab(wbout)], {type: "application/octet-stream"}), 'test.xlsx');
+	});
+}
+
+function wb_parse(){
+	saveFile();
+    process_wb_json();
+	process_wb_html();
+}
+
+function wb_initialize(url){
+  var req = new XMLHttpRequest();
+  req.open("GET", url, true);
+  req.responseType = "arraybuffer";
+  req.onload = function(e) {
+    var data = new Uint8Array(req.response);
+	var arr = new Array();
+	for(var i = 0; i < data.length; i++){
+		arr[i] = String.fromCharCode(data[i]);
+		var bstr = arr.join("");
+	}
+    workbook = XLSX.read(bstr, {type:"binary"});
+    wb_parse(workbook);
+  };
+  req.send();
+}
+
+</script>
+</body>
+</html>
